@@ -299,3 +299,55 @@ class TestSweetDeleteEndpoint:
         
         assert response.status_code == status.HTTP_403_FORBIDDEN
         assert Sweet.objects.filter(id=self.sweet.id).exists()
+
+@pytest.mark.django_db
+class TestSweetSearchEndpoint:
+    """Test GET /api/sweets/search/ - Search for sweets"""
+    
+    def setup_method(self):
+        """Setup test data"""
+        self.client = APIClient()
+        self.user = User.objects.create_user(
+            email='user@example.com',
+            username='user',
+            password='pass123'
+        )
+        
+        # Create test sweets
+        Sweet.objects.create(
+            name="Milk Chocolate Bar",
+            category="Chocolate",
+            price=Decimal("2.50"),
+            quantity=10
+        )
+        Sweet.objects.create(
+            name="Dark Chocolate Truffle",
+            category="Chocolate",
+            price=Decimal("3.50"),
+            quantity=5
+        )
+        Sweet.objects.create(
+            name="Gummy Bears",
+            category="Gummy",
+            price=Decimal("1.50"),
+            quantity=20
+        )
+        Sweet.objects.create(
+            name="Sour Worms",
+            category="Sour",
+            price=Decimal("2.00"),
+            quantity=15
+        )
+        
+        self.url = '/api/sweets/search/'
+    
+    def test_search_by_name(self):
+        """
+        Test searching sweets by name
+        """
+        self.client.force_authenticate(user=self.user)
+        
+        response = self.client.get(self.url, {'name': 'chocolate'})
+        
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 2
