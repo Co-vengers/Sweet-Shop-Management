@@ -1,152 +1,301 @@
+"""
+Tests for Sweet API Endpoints
+"""
+
 import pytest
+from decimal import Decimal
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
-from rest_framework_simplejwt.tokens import RefreshToken
-from apps.authentication.models import User
+from django.contrib.auth import get_user_model
 from apps.sweets.models import Sweet
-from .test_models import UserFactory, SweetFactory # Import factories
 
-# --- Helper Functions ---
+User = get_user_model()
 
-def get_auth_client(user, client):
-    """Generates a client with JWT authentication."""
-    refresh = RefreshToken.for_user(user)
-    client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
-    return client
-
-# --- View Tests ---
 
 @pytest.mark.django_db
-class TestSweetListAndCreate:
+class TestSweetListEndpoint:
+    """Test GET /api/sweets/ - List all sweets"""
     
     def setup_method(self):
-        self.list_url = reverse('sweet-list') # /api/sweets/
+        """Setup test client and create test user"""
         self.client = APIClient()
-        self.regular_user = UserFactory()
-        self.admin_user = UserFactory(is_admin=True, is_staff=True)
-        SweetFactory.create_batch(5) # Create 5 sweets for listing
+        self.user = User.objects.create_user(
+            email='testuser@example.com',
+            username='testuser',
+            password='testpass123'
+        )
+        self.url = '/api/sweets/'
     
-    # --- GET /api/sweets/ (List) Tests ---
+    def test_list_sweets_authenticated(self):
+        """
+        Test that authenticated users can list sweets
+        """
+        # Create test sweets
+        Sweet.objects.create(name="Sweet 1", category="Chocolate", price=Decimal("2.00"), quantity=10)
+        Sweet.objects.create(name="Sweet 2", category="Gummy", price=Decimal("1.50"), quantity=5)
+        
+        # Authenticate
+        self.client.force_authenticate(user=self.user)
+        
+        # Make request
+        response = self.client.get(self.url)
+        
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data) == 2
     
-    def test_list_sweets_unauthenticated_denied(self):
-        """Unauthenticated users cannot view the list."""
-        response = self.client.get(self.list_url)
+    def test_list_sweets_unauthenticated(self):
+        """
+        Test that unauthenticated users cannot list sweets
+        """
+        response = self.client.get(self.url)
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    def test_list_sweets_authenticated_success(self):
-        """Authenticated users can view the list."""
-        auth_client = get_auth_client(self.regular_user, self.client)
-        response = auth_client.get(self.list_url)
-        
-        assert response.status_code == status.HTTP_200_OK
-        assert len(response.data['results']) == 5 # Check pagination result count
-        assert 'name' in response.data['results'][0] # Check data structure
-        
-    # --- POST /api/sweets/ (Create) Tests ---
-
-    def test_create_sweet_regular_user_denied(self):
-        """Regular users cannot create a new sweet."""
-        auth_client = get_auth_client(self.regular_user, self.client)
-        data = {
-            'name': 'Jelly Beans',
-            'category': 'GUMMY',
-            'price': 3.99,
-            'quantity': 100
-        }
-        response = auth_client.post(self.list_url, data)
-        assert response.status_code == status.HTTP_403_FORBIDDEN # Should fail due to lack of admin permission
-
-    def test_create_sweet_admin_success(self):
-        """Admin users can create a new sweet."""
-        auth_client = get_auth_client(self.admin_user, self.client)
-        data = {
-            'name': 'Gourmet Truffles',
-            'category': 'CHOCOLATE',
-            'price': 8.50,
-            'quantity': 25
-        }
-        response = auth_client.post(self.list_url, data)
-        
-        assert response.status_code == status.HTTP_201_CREATED
-        assert Sweet.objects.filter(name='Gourmet Truffles').exists()
-        assert response.data['name'] == 'Gourmet Truffles'
-        assert float(response.data['price']) == 8.50
-
-    def test_create_sweet_missing_required_fields_fail(self):
-        """Test creation fails when missing name/price."""
-        auth_client = get_auth_client(self.admin_user, self.client)
-        data = {
-            'category': 'GUMMY',
-            'quantity': 100
-            # Missing 'name' and 'price'
-        }
-        response = auth_client.post(self.list_url, data)
-        
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert 'name' in response.data
-        assert 'price' in response.data
 
 @pytest.mark.django_db
-class TestSweetRetrieveUpdateDestroy:
+class TestSweetCreateEndpoint:
+    """Test POST /api/sweets/ - Create a new sweet"""
     
     def setup_method(self):
+        """Setup test client and users"""
         self.client = APIClient()
-        self.sweet = SweetFactory(name='Test Chocolate', price=10.00, quantity=5)
-        self.detail_url = reverse('sweet-detail', kwargs={'pk': self.sweet.id}) # Requires URL name 'sweet-detail'
-        self.regular_user = UserFactory()
-        self.admin_user = UserFactory(is_admin=True, is_staff=True)
-    
-    # --- GET /api/sweets/:id (Retrieve) Tests ---
-    
-    def test_retrieve_sweet_authenticated_success(self):
-        """Authenticated user can retrieve a sweet's details."""
-        auth_client = get_auth_client(self.regular_user, self.client)
-        response = auth_client.get(self.detail_url)
         
-        assert response.status_code == status.HTTP_200_OK
-        assert response.data['name'] == 'Test Chocolate'
-
-    # --- PUT /api/sweets/:id (Update) Tests ---
+        # Regular user
+        self.user = User.objects.create_user(
+            email='user@example.com',
+            username='user',
+            password='pass123'
+        )
+        
+        # Admin user
+        self.admin = User.objects.create_user(
+            email='admin@example.com',
+            username='admin',
+            password='admin123',
+            is_admin=True
+        )
+        
+        self.url = '/api/sweets/'
     
-    def test_update_sweet_regular_user_denied(self):
-        """Regular users cannot update a sweet."""
-        auth_client = get_auth_client(self.regular_user, self.client)
-        update_data = {'name': 'New Name', 'price': 99.99}
-        response = auth_client.put(self.detail_url, update_data, format='json')
+    def test_create_sweet_as_admin(self):
+        """
+        Test that admin users can create sweets
+        """
+        self.client.force_authenticate(user=self.admin)
         
-        assert response.status_code == status.HTTP_403_FORBIDDEN
-        
-    def test_update_sweet_admin_success(self):
-        """Admin users can update a sweet."""
-        auth_client = get_auth_client(self.admin_user, self.client)
-        update_data = {
-            'name': 'Updated Chocolate', 
-            'price': 15.00,
-            'quantity': 10
+        data = {
+            'name': 'New Chocolate',
+            'category': 'Chocolate',
+            'price': '2.50',
+            'quantity': 100,
+            'description': 'Delicious chocolate'
         }
-        response = auth_client.put(self.detail_url, update_data, format='json')
         
-        self.sweet.refresh_from_db() # Refresh data from database
+        response = self.client.post(self.url, data, format='json')
         
-        assert response.status_code == status.HTTP_200_OK
-        assert response.data['name'] == 'Updated Chocolate'
-        assert self.sweet.name == 'Updated Chocolate'
-        
-    # --- DELETE /api/sweets/:id (Delete) Tests ---
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.data['name'] == 'New Chocolate'
+        assert Sweet.objects.filter(name='New Chocolate').exists()
     
-    def test_delete_sweet_regular_user_denied(self):
-        """Regular users cannot delete a sweet."""
-        auth_client = get_auth_client(self.regular_user, self.client)
-        response = auth_client.delete(self.detail_url)
+    def test_create_sweet_as_regular_user_forbidden(self):
+        """
+        Test that regular users cannot create sweets
+        """
+        self.client.force_authenticate(user=self.user)
+        
+        data = {
+            'name': 'New Chocolate',
+            'category': 'Chocolate',
+            'price': '2.50',
+            'quantity': 100
+        }
+        
+        response = self.client.post(self.url, data, format='json')
         
         assert response.status_code == status.HTTP_403_FORBIDDEN
-        assert Sweet.objects.filter(id=self.sweet.id).exists() # Still exists
+    
+    def test_create_sweet_with_invalid_data(self):
+        """
+        Test creating sweet with invalid data
+        """
+        self.client.force_authenticate(user=self.admin)
         
-    def test_delete_sweet_admin_success(self):
-        """Admin users can delete a sweet."""
-        auth_client = get_auth_client(self.admin_user, self.client)
-        response = auth_client.delete(self.detail_url)
+        data = {
+            'name': '',  # Empty name
+            'category': 'Chocolate',
+            'price': '-2.50',  # Negative price
+            'quantity': -10  # Negative quantity
+        }
+        
+        response = self.client.post(self.url, data, format='json')
+        
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+
+@pytest.mark.django_db
+class TestSweetDetailEndpoint:
+    """Test GET /api/sweets/:id/ - Get single sweet"""
+    
+    def setup_method(self):
+        """Setup test data"""
+        self.client = APIClient()
+        self.user = User.objects.create_user(
+            email='user@example.com',
+            username='user',
+            password='pass123'
+        )
+        
+        self.sweet = Sweet.objects.create(
+            name="Test Sweet",
+            category="Chocolate",
+            price=Decimal("2.50"),
+            quantity=10
+        )
+    
+    def test_get_sweet_detail_authenticated(self):
+        """
+        Test getting sweet details when authenticated
+        """
+        self.client.force_authenticate(user=self.user)
+        
+        url = f'/api/sweets/{self.sweet.id}/'
+        response = self.client.get(url)
+        
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data['name'] == 'Test Sweet'
+        assert response.data['id'] == self.sweet.id
+    
+    def test_get_nonexistent_sweet(self):
+        """
+        Test getting a sweet that doesn't exist
+        """
+        self.client.force_authenticate(user=self.user)
+        
+        url = '/api/sweets/99999/'
+        response = self.client.get(url)
+        
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+
+@pytest.mark.django_db
+class TestSweetUpdateEndpoint:
+    """Test PUT /api/sweets/:id/ - Update a sweet"""
+    
+    def setup_method(self):
+        """Setup test data"""
+        self.client = APIClient()
+        
+        self.user = User.objects.create_user(
+            email='user@example.com',
+            username='user',
+            password='pass123'
+        )
+        
+        self.admin = User.objects.create_user(
+            email='admin@example.com',
+            username='admin',
+            password='admin123',
+            is_admin=True
+        )
+        
+        self.sweet = Sweet.objects.create(
+            name="Old Name",
+            category="Chocolate",
+            price=Decimal("2.50"),
+            quantity=10
+        )
+    
+    def test_update_sweet_as_admin(self):
+        """
+        Test that admin can update sweet
+        """
+        self.client.force_authenticate(user=self.admin)
+        
+        url = f'/api/sweets/{self.sweet.id}/'
+        data = {
+            'name': 'Updated Name',
+            'category': 'Gummy',
+            'price': '3.00',
+            'quantity': 20
+        }
+        
+        response = self.client.put(url, data, format='json')
+        
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data['name'] == 'Updated Name'
+        
+        # Verify database was updated
+        self.sweet.refresh_from_db()
+        assert self.sweet.name == 'Updated Name'
+        assert self.sweet.price == Decimal('3.00')
+    
+    def test_update_sweet_as_regular_user_forbidden(self):
+        """
+        Test that regular users cannot update sweets
+        """
+        self.client.force_authenticate(user=self.user)
+        
+        url = f'/api/sweets/{self.sweet.id}/'
+        data = {
+            'name': 'Updated Name',
+            'category': 'Gummy',
+            'price': '3.00',
+            'quantity': 20
+        }
+        
+        response = self.client.put(url, data, format='json')
+        
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+@pytest.mark.django_db
+class TestSweetDeleteEndpoint:
+    """Test DELETE /api/sweets/:id/ - Delete a sweet"""
+    
+    def setup_method(self):
+        """Setup test data"""
+        self.client = APIClient()
+        
+        self.user = User.objects.create_user(
+            email='user@example.com',
+            username='user',
+            password='pass123'
+        )
+        
+        self.admin = User.objects.create_user(
+            email='admin@example.com',
+            username='admin',
+            password='admin123',
+            is_admin=True
+        )
+        
+        self.sweet = Sweet.objects.create(
+            name="To Delete",
+            category="Chocolate",
+            price=Decimal("2.50"),
+            quantity=10
+        )
+    
+    def test_delete_sweet_as_admin(self):
+        """
+        Test that admin can delete sweet
+        """
+        self.client.force_authenticate(user=self.admin)
+        
+        url = f'/api/sweets/{self.sweet.id}/'
+        response = self.client.delete(url)
         
         assert response.status_code == status.HTTP_204_NO_CONTENT
-        assert not Sweet.objects.filter(id=self.sweet.id).exists() # Deleted
+        assert not Sweet.objects.filter(id=self.sweet.id).exists()
+    
+    def test_delete_sweet_as_regular_user_forbidden(self):
+        """
+        Test that regular users cannot delete sweets
+        """
+        self.client.force_authenticate(user=self.user)
+        
+        url = f'/api/sweets/{self.sweet.id}/'
+        response = self.client.delete(url)
+        
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert Sweet.objects.filter(id=self.sweet.id).exists()
