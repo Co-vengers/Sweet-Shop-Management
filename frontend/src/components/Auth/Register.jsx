@@ -6,7 +6,6 @@
 import { useState, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
-import './Auth.css';
 
 const Register = () => {
   const navigate = useNavigate();
@@ -89,78 +88,66 @@ const Register = () => {
   };
 
   return (
-    <div className="auth-container">
-      <h2>🍬 Join Sweet Shop!</h2>
-      <p>Create your account</p>
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-indigo-500 to-purple-600">
+            
+            {/* .auth-card */}
+            <div className="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md">
+                
+                {/* Titles */}
+                <h2 className="text-3xl font-extrabold text-gray-900 text-center mb-2">🍬 Join Sweet Shop!</h2>
+                <p className="text-center text-gray-500 mb-8">Create your account</p>
 
-      {errors.general && <p className="error">{errors.general}</p>}
+                {/* .error-message (General Error) */}
+                {errors.general && (
+                    <p className="bg-red-100 text-red-700 p-3 rounded-lg text-center mb-5 font-medium">
+                        {errors.general}
+                    </p>
+                )}
 
-      <form onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label>Email</label>
-          <input
-            type="email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            required
-          />
-          {errors.email && <span className="error">{errors.email}</span>}
+                {/* .auth-form */}
+                <form onSubmit={handleSubmit} className="space-y-5">
+                    
+                    {/* Form Groups */}
+                    {['email', 'username', 'password', 'password2'].map((field) => (
+                        <div key={field} className="space-y-2">
+                            <label className="text-sm font-medium text-gray-700 capitalize">
+                                {field === 'password2' ? 'Confirm Password' : field}
+                            </label>
+                            <input
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-150 ease-in-out"
+                                type={field.includes('password') ? 'password' : field.includes('email') ? 'email' : 'text'}
+                                name={field}
+                                value={formData[field]}
+                                onChange={handleChange}
+                                required
+                            />
+                            {/* .field-error */}
+                            {errors[field] && (
+                                <span className="text-sm text-red-500 font-medium">{errors[field]}</span>
+                            )}
+                        </div>
+                    ))}
+
+                    {/* .btn-primary */}
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="w-full py-3 bg-gradient-to-r from-indigo-600 to-purple-700 text-white font-semibold rounded-lg shadow-md hover:from-indigo-700 hover:to-purple-800 transition duration-150 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {loading ? 'Creating account...' : 'Register'}
+                    </button>
+                </form>
+
+                {/* .auth-footer */}
+                <p className="mt-6 text-center text-sm text-gray-600">
+                    Already have an account?{' '}
+                    <Link to="/login" className="font-semibold text-indigo-600 hover:text-indigo-500 hover:underline">
+                        Login here
+                    </Link>
+                </p>
+            </div>
         </div>
-
-        <div className="form-group">
-          <label>Username</label>
-          <input
-            type="text"
-            name="username"
-            value={formData.username}
-            onChange={handleChange}
-            required
-          />
-          {errors.username && (
-            <span className="error">{errors.username}</span>
-          )}
-        </div>
-
-        <div className="form-group">
-          <label>Password</label>
-          <input
-            type="password"
-            name="password"
-            value={formData.password}
-            onChange={handleChange}
-            required
-          />
-          {errors.password && (
-            <span className="error">{errors.password}</span>
-          )}
-        </div>
-
-        <div className="form-group">
-          <label>Confirm Password</label>
-          <input
-            type="password"
-            name="password2"
-            value={formData.password2}
-            onChange={handleChange}
-            required
-          />
-          {errors.password2 && (
-            <span className="error">{errors.password2}</span>
-          )}
-        </div>
-
-        <button type="submit" disabled={loading}>
-          {loading ? 'Creating account...' : 'Register'}
-        </button>
-      </form>
-
-      <p>
-        Already have an account?{' '}
-        <Link to="/login">Login here</Link>
-      </p>
-    </div>
-  );
+    );
 };
 
 export default Register;

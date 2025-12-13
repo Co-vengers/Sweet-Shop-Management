@@ -4,7 +4,13 @@
  */
 
 import { createContext, useState, useEffect } from 'react';
-import { login as loginService, register as registerService, logout as logoutService, getUserProfile, isAuthenticated } from '../services/auth';
+import {
+  login as loginService,
+  register as registerService,
+  logout as logoutService,
+  getUserProfile,
+  isAuthenticated,
+} from '../services/auth';
 
 // Create the context
 export const AuthContext = createContext();
@@ -36,29 +42,23 @@ export const AuthProvider = ({ children }) => {
     loadUser();
   }, []);
 
-  /**
-   * Login function
-   */
   const login = async (email, password) => {
     try {
       setError(null);
       await loginService({ email, password });
-      
-      // Get user profile after login
+
       const userData = await getUserProfile();
       setUser(userData);
-      
+
       return { success: true };
     } catch (err) {
-      const errorMessage = err.detail || 'Login failed. Please check your credentials.';
+      const errorMessage =
+        err.detail || 'Login failed. Please check your credentials.';
       setError(errorMessage);
       return { success: false, error: errorMessage };
     }
   };
 
-  /**
-   * Register function
-   */
   const register = async (userData) => {
     try {
       setError(null);
@@ -66,21 +66,21 @@ export const AuthProvider = ({ children }) => {
       setUser(response.user);
       return { success: true };
     } catch (err) {
-      const errorMessage = err.email?.[0] || err.username?.[0] || err.password?.[0] || 'Registration failed.';
+      const errorMessage =
+        err.email?.[0] ||
+        err.username?.[0] ||
+        err.password?.[0] ||
+        'Registration failed.';
       setError(errorMessage);
       return { success: false, error: errorMessage };
     }
   };
 
-  /**
-   * Logout function
-   */
   const logout = () => {
     logoutService();
     setUser(null);
   };
 
-  // Context value
   const value = {
     user,
     loading,
@@ -92,8 +92,8 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    
+    <AuthContext.Provider value={value}>
       {children}
-    
+    </AuthContext.Provider>
   );
 };

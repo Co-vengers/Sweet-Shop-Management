@@ -35,7 +35,7 @@ export const register = async (userData) => {
  */
 export const login = async (credentials) => {
     try {
-        const response = await api.get('/auth/login/', credentials);
+        const response = await api.post('/auth/login/', credentials);
 
         //save tokens to localstorage
         if(response.data.access){
