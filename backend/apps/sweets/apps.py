@@ -3,4 +3,4 @@ from django.apps import AppConfig
 
 class SweetsConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'sweets'
+    name = 'apps.sweets'

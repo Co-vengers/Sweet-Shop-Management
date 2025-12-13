@@ -31,7 +31,7 @@ SECRET_KEY = os.getenv("secret_key")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("debug")
 
-ALLOWED_HOSTS = os.getenv("allowed_host")
+ALLOWED_HOSTS = []
 
 
 # Application definition
@@ -46,10 +46,10 @@ INSTALLED_APPS = [
 
     'rest_framework',
     'rest_framework_simplejwt',
-    'corsheader',
+    'corsheaders',
 
     'apps.authentication',
-    'apps.sweet',
+    'apps.sweets',
     'apps.inventory',
 ]
 
@@ -114,7 +114,10 @@ SIMPLE_JWT = {
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
 }
 
-CORS_ALLOWED_ORIGINS = os.getenv("cors_allowed_origins")
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://localhost:3000",
+]
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
