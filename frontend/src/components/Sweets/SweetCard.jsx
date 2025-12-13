@@ -3,7 +3,14 @@
  * Displays a single sweet in a modern card format (Tailwind UI)
  */
 
-const SweetCard = ({ sweet, onEdit, onDelete, isAdmin }) => {
+const SweetCard = ({
+  sweet,
+  onEdit,
+  onDelete,
+  onPurchase,
+  onRestock,
+  isAdmin,
+}) => {
   /**
    * Get emoji based on category
    */
@@ -72,12 +79,23 @@ const SweetCard = ({ sweet, onEdit, onDelete, isAdmin }) => {
       <div className="px-5 pb-5">
         {isAdmin ? (
           <div className="flex gap-3">
+            {/* Edit */}
             <button
               onClick={() => onEdit(sweet)}
               className="flex-1 py-2 rounded-lg bg-indigo-100 text-indigo-700 font-semibold hover:bg-indigo-200 transition"
             >
               ✏️ Edit
             </button>
+
+            {/* Restock */}
+            <button
+              onClick={() => onRestock(sweet)}
+              className="flex-1 py-2 rounded-lg bg-emerald-100 text-emerald-700 font-semibold hover:bg-emerald-200 transition"
+            >
+              📦 Restock
+            </button>
+
+            {/* Delete */}
             <button
               onClick={() => onDelete(sweet)}
               className="flex-1 py-2 rounded-lg bg-red-100 text-red-700 font-semibold hover:bg-red-200 transition"
@@ -86,13 +104,17 @@ const SweetCard = ({ sweet, onEdit, onDelete, isAdmin }) => {
             </button>
           </div>
         ) : (
-          sweet.quantity > 0 && (
-            <button
-              className="w-full py-2 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-700 text-white font-semibold hover:from-indigo-700 hover:to-purple-800 transition"
-            >
-              🛒 Purchase
-            </button>
-          )
+          <button
+            onClick={() => onPurchase(sweet)}
+            disabled={sweet.quantity === 0}
+            className={`w-full py-2 rounded-lg font-semibold transition ${
+              sweet.quantity === 0
+                ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                : 'bg-gradient-to-r from-indigo-600 to-purple-700 text-white hover:from-indigo-700 hover:to-purple-800'
+            }`}
+          >
+            {sweet.quantity === 0 ? '❌ Out of Stock' : '🛒 Purchase'}
+          </button>
         )}
       </div>
     </div>
