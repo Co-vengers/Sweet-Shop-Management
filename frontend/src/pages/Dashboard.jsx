@@ -17,7 +17,7 @@ import {
 import SweetCard from '../components/Sweets/SweetCard';
 import SearchBar from '../components/Sweets/SearchBar';
 import SweetForm from '../components/Sweets/SweetForm';
-import DeleteConfirmation from '../components/Sweets/DeleteConfirmation';
+import DeleteConfirmation from "../components/Sweets/DeleteConfirmation";
 
 const Dashboard = () => {
   const { user, logout } = useContext(AuthContext);
