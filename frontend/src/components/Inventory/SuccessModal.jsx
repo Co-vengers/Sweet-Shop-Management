@@ -3,7 +3,6 @@
  * Shows success message after purchase or restock
  */
 
-import './SuccessModal.css';
 
 const formatLabel = (key) =>
   key

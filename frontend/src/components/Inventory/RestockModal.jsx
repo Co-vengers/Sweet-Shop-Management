@@ -4,7 +4,6 @@
  */
 
 import { useState, useEffect, useMemo } from 'react';
-import './RestockModal.css';
 
 const RestockModal = ({ sweet, onConfirm, onCancel }) => {
   const [quantity, setQuantity] = useState(10);

@@ -25,8 +25,6 @@ import PurchaseModal from '../components/Inventory/PurchaseModal';
 import RestockModal from '../components/Inventory/RestockModal';
 import SuccessModal from '../components/Inventory/SuccessModal';
 
-import './Dashboard.css';
-
 const Dashboard = () => {
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();

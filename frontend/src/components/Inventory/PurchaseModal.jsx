@@ -4,7 +4,6 @@
  */
 
 import { useState, useEffect, useMemo } from 'react';
-import './PurchaseModal.css';
 
 const PurchaseModal = ({ sweet, onConfirm, onCancel }) => {
   const [quantity, setQuantity] = useState(1);
