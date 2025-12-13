@@ -1,16 +1,85 @@
 /**
  * Dashboard Page
- * Main page after login
+ * Main page showing all sweets with search and CRUD operations
  */
 
-import { useContext } from 'react';
-import { AuthContext } from '../context/AuthContext';
+import { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { AuthContext } from '../context/AuthContext';
+import {
+  getAllSweets,
+  createSweet,
+  updateSweet,
+  deleteSweet,
+  searchSweets
+} from '../services/sweets';
 
+import SweetCard from '../components/Sweets/SweetCard';
+import SearchBar from '../components/Sweets/SearchBar';
+import SweetForm from '../components/Sweets/SweetForm';
+import DeleteConfirmation from '../components/Sweets/DeleteConfirmation';
 
 const Dashboard = () => {
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
+
+  // State
+  const [sweets, setSweets] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  // Modal states
+  const [showForm, setShowForm] = useState(false);
+  const [editingSweet, setEditingSweet] = useState(null);
+  const [deletingSweet, setDeletingSweet] = useState(null);
+
+  // Search state
+  const [isSearching, setIsSearching] = useState(false);
+
+  useEffect(() => {
+    loadSweets();
+  }, []);
+
+  const loadSweets = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      const data = await getAllSweets();
+      setSweets(data);
+      setIsSearching(false);
+    } catch {
+      setError('Failed to load sweets.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSearch = async (filters) => {
+    try {
+      setLoading(true);
+      setError('');
+      const data = await searchSweets(filters);
+      setSweets(data);
+      setIsSearching(true);
+    } catch {
+      setError('Search failed.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleClearSearch = () => loadSweets();
+
+  const handleFormSubmit = async (formData) => {
+    if (editingSweet) {
+      await updateSweet(editingSweet.id, formData);
+    } else {
+      await createSweet(formData);
+    }
+    setShowForm(false);
+    setEditingSweet(null);
+    loadSweets();
+  };
 
   const handleLogout = () => {
     logout();
@@ -19,70 +88,148 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-            
-            {/* .dashboard-header */}
-            <header className="bg-white shadow-md">
-                <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
-                    <h1 className="text-2xl font-bold text-indigo-600">🍬 Sweet Shop Dashboard</h1>
 
-                    <div className="user-actions flex items-center space-x-4">
-                        <span className="text-gray-700 font-medium">Hello, {user?.username}!</span>
-                        <button 
-                            onClick={handleLogout}
-                            className="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 transition duration-150"
-                        >
-                            Logout
-                        </button>
-                    </div>
-                </div>
-            </header>
+      {/* Navbar */}
+      <header className="bg-white shadow-md">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+          <h1 className="text-2xl font-extrabold text-indigo-600">
+            🍬 Sweet Shop
+          </h1>
 
-            {/* .dashboard-content */}
-            <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-                <div className="px-4 py-6 sm:p-0">
-                    <div className="bg-white shadow-xl rounded-lg p-6 mb-8">
-                        <h2 className="text-3xl font-extrabold text-gray-900 mb-2">Welcome to Sweet Shop! 🎉</h2>
-                        <p className="text-gray-600">Your authentication is working perfectly. You are safely logged in.</p>
-                    </div>
-
-                    {/* .profile-section */}
-                    <section className="bg-white shadow-lg rounded-lg p-6 mb-8 border-l-4 border-indigo-500">
-                        <h3 className="text-xl font-semibold text-gray-800 mb-4">Your Profile Details</h3>
-                        <div className="space-y-2 text-gray-700">
-                            <p>
-                                <strong>Email:</strong> <span className="font-mono">{user?.email}</span>
-                            </p>
-                            <p>
-                                <strong>Username:</strong> <span className="font-mono">{user?.username}</span>
-                            </p>
-                            <p>
-                                <strong>Admin Status:</strong>{' '}
-                                <span className={`font-bold ${user?.is_admin ? 'text-green-600' : 'text-yellow-600'}`}>
-                                    {user?.is_admin ? 'Yes' : 'No'}
-                                </span>
-                            </p>
-                        </div>
-                    </section>
-
-                    {/* .next-steps */}
-                    <section className="bg-white shadow-lg rounded-lg p-6">
-                        <h3 className="text-xl font-semibold text-gray-800 mb-4">Next Steps in Development</h3>
-                        <ul className="space-y-3 text-gray-700 list-inside">
-                            <li className="flex items-center">
-                                <span className="text-green-500 mr-2">✅</span> Authentication system is complete and secure.
-                            </li>
-                            <li className="flex items-center">
-                                <span className="text-yellow-500 mr-2">⏳</span> **Next:** Implement the Sweets management (CRUD) UI.
-                            </li>
-                            <li className="flex items-center">
-                                <span className="text-yellow-500 mr-2">⏳</span> **Then:** Add inventory tracking and reporting features.
-                            </li>
-                        </ul>
-                    </section>
-                </div>
-            </main>
+          <div className="flex items-center gap-4">
+            <span className="text-gray-700">
+              Hello, <strong>{user?.username}</strong>
+              {user?.is_admin && (
+                <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-indigo-100 text-indigo-700 font-semibold">
+                  Admin
+                </span>
+              )}
+            </span>
+            <button
+              onClick={handleLogout}
+              className="px-4 py-2 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 transition"
+            >
+              Logout
+            </button>
+          </div>
         </div>
-    );
+      </header>
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-6 py-8">
+
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+          <div>
+            <h2 className="text-3xl font-bold text-gray-900">
+              Sweet Collection
+            </h2>
+            <p className="text-gray-600 mt-1">
+              {isSearching ? 'Search results' : 'Browse all available sweets'}
+            </p>
+          </div>
+
+          {user?.is_admin && (
+            <button
+              onClick={() => {
+                setEditingSweet(null);
+                setShowForm(true);
+              }}
+              className="mt-4 md:mt-0 px-5 py-3 rounded-lg font-semibold text-white bg-gradient-to-r from-indigo-600 to-purple-700 hover:from-indigo-700 hover:to-purple-800 transition shadow-md"
+            >
+              ➕ Add New Sweet
+            </button>
+          )}
+        </div>
+
+        {/* Search */}
+        <SearchBar onSearch={handleSearch} onClear={handleClearSearch} />
+
+        {/* Error */}
+        {error && (
+          <div className="mt-6 bg-red-100 text-red-700 p-4 rounded-lg font-medium">
+            ⚠️ {error}
+          </div>
+        )}
+
+        {/* Loading */}
+        {loading && (
+          <div className="flex flex-col items-center justify-center py-16">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-t-transparent mb-4" />
+            <p className="text-gray-600">Loading sweets...</p>
+          </div>
+        )}
+
+        {/* Grid */}
+        {!loading && sweets.length > 0 && (
+          <div className="mt-8 grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+            {sweets.map((sweet) => (
+              <SweetCard
+                key={sweet.id}
+                sweet={sweet}
+                onEdit={() => {
+                  setEditingSweet(sweet);
+                  setShowForm(true);
+                }}
+                onDelete={() => setDeletingSweet(sweet)}
+                isAdmin={user?.is_admin}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!loading && sweets.length === 0 && (
+          <div className="mt-16 text-center">
+            <div className="text-6xl mb-4">🍭</div>
+            <h3 className="text-xl font-semibold text-gray-900">
+              {isSearching ? 'No sweets found' : 'No sweets available'}
+            </h3>
+            <p className="text-gray-600 mt-2">
+              {isSearching
+                ? 'Try adjusting your search filters.'
+                : user?.is_admin
+                  ? 'Start by adding a new sweet.'
+                  : 'Check back later for new sweets!'}
+            </p>
+
+            {isSearching && (
+              <button
+                onClick={handleClearSearch}
+                className="mt-4 px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition"
+              >
+                Show All Sweets
+              </button>
+            )}
+          </div>
+        )}
+      </main>
+
+      {/* Modals */}
+      {showForm && (
+        <SweetForm
+          sweet={editingSweet}
+          onSubmit={handleFormSubmit}
+          onCancel={() => {
+            setShowForm(false);
+            setEditingSweet(null);
+          }}
+        />
+      )}
+
+      {deletingSweet && (
+        <DeleteConfirmation
+          sweet={deletingSweet}
+          onConfirm={async () => {
+            await deleteSweet(deletingSweet.id);
+            setDeletingSweet(null);
+            loadSweets();
+          }}
+          onCancel={() => setDeletingSweet(null)}
+        />
+      )}
+    </div>
+  );
 };
 
 export default Dashboard;
