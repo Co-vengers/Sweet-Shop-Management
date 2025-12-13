@@ -42,45 +42,84 @@ export const AuthProvider = ({ children }) => {
     loadUser();
   }, []);
 
+  /**
+   * Login function
+   */
   const login = async (email, password) => {
     try {
       setError(null);
-      await loginService({ email, password });
+      console.log('🔵 AuthContext: Starting login...');
 
+      // Step 1: Login and get tokens
+      // Assumes loginService handles setting tokens in localStorage
+      const response = await loginService({ email, password });
+      console.log('✅ AuthContext: Login service completed');
+
+      // Step 2: Wait a tiny bit to ensure localStorage is updated (Optional, but safer for async storage)
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Step 3: Verify tokens exist
+      const accessToken = localStorage.getItem('accessToken');
+      const refreshToken = localStorage.getItem('refreshToken');
+      console.log('🔍 AuthContext: Token verification', {
+        access: accessToken ? 'exists' : 'MISSING',
+        refresh: refreshToken ? 'exists' : 'MISSING'
+      });
+
+      if (!accessToken) {
+        throw new Error('Access token not found after login');
+      }
+
+      // Step 4: Get user profile
+      console.log('🔵 AuthContext: Fetching user profile...');
       const userData = await getUserProfile();
+      console.log('✅ AuthContext: User profile fetched');
       setUser(userData);
 
       return { success: true };
     } catch (err) {
-      const errorMessage =
-        err.detail || 'Login failed. Please check your credentials.';
+      console.error('❌ AuthContext: Login error:', err);
+      // Use the generic error message or the specific error from the thrown Error
+      const errorMessage = err.detail || err.message || 'Login failed. Please check your credentials.';
       setError(errorMessage);
       return { success: false, error: errorMessage };
     }
   };
 
+  /**
+   * Register function
+   */
   const register = async (userData) => {
     try {
       setError(null);
       const response = await registerService(userData);
-      setUser(response.user);
+      
+      // Assumes register service also returns user data and logs them in
+      setUser(response.user); 
       return { success: true };
     } catch (err) {
+      console.error('Registration error:', err);
+      // Improved error handling for common backend validation messages
       const errorMessage =
         err.email?.[0] ||
         err.username?.[0] ||
         err.password?.[0] ||
+        err.message ||
         'Registration failed.';
       setError(errorMessage);
       return { success: false, error: errorMessage };
     }
   };
 
+  /**
+   * Logout function
+   */
   const logout = () => {
     logoutService();
     setUser(null);
   };
 
+  // Context value
   const value = {
     user,
     loading,

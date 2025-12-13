@@ -11,21 +11,27 @@ import api from './api';
  * @returns {Promise} API response with user and tokens
  */
 export const register = async (userData) => {
-    try {
-        const response = await api.post('/auth/register/', userData);
-
-        //save tokens to localstorage
-        if(response.data.access){
-            localStorage.setItem('accessToken', response.data.access);
-            localStorage.setItem('refreshToken', response.data.refresh);
-        }
-
-        return response.data;
+  try {
+    console.log('🔵 Attempting registration...');
+    const response = await api.post('/auth/register/', userData);
+    console.log('✅ Registration successful:', response.data);
+    
+    // Save tokens to localStorage IMMEDIATELY
+    if (response.data.access && response.data.refresh) {
+      localStorage.setItem('accessToken', response.data.access);
+      localStorage.setItem('refreshToken', response.data.refresh);
+      console.log('✅ Tokens saved to localStorage');
+      console.log('   Access token:', response.data.access.substring(0, 20) + '...');
+      console.log('   Refresh token:', response.data.refresh.substring(0, 20) + '...');
+    } else {
+      console.warn('⚠️ No tokens in registration response');
     }
-
-    catch(error){
-        throw error.response?.data || error.message;
-    }
+    
+    return response.data;
+  } catch (error) {
+    console.error('❌ Registration error:', error.response?.data || error.message);
+    throw error.response?.data || { message: error.message };
+  }
 };
 
 /**
@@ -34,27 +40,61 @@ export const register = async (userData) => {
  * @returns {Promise} API response with tokens
  */
 export const login = async (credentials) => {
-    try {
-        const response = await api.post('/auth/login/', credentials);
+  try {
+    console.log('🔵 Attempting login with email:', credentials.email);
+    
+    // Make login request WITHOUT using the api instance
+    // because it might have stale tokens in the interceptor
+    const response = await fetch('http://127.0.0.1:8000/api/auth/login/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(credentials),
+    });
 
-        //save tokens to localstorage
-        if(response.data.access){
-            localStorage.setItem('acessToken', response.data.access);
-            localStorage.setItem('refershToken', response.data.refresh);
-        }
-        return response.data;
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw errorData;
     }
-    catch(error){
-        throw error.response?.data || error.message;
+
+    const data = await response.json();
+    console.log('✅ Login successful:', data);
+    
+    // Save tokens to localStorage IMMEDIATELY and SYNCHRONOUSLY
+    if (data.access && data.refresh) {
+      localStorage.setItem('accessToken', data.access);
+      localStorage.setItem('refreshToken', data.refresh);
+      console.log('✅ Tokens saved to localStorage');
+      console.log('   Access token:', data.access.substring(0, 20) + '...');
+      console.log('   Refresh token:', data.refresh.substring(0, 20) + '...');
+      
+      // Verify tokens were saved
+      const savedAccess = localStorage.getItem('accessToken');
+      const savedRefresh = localStorage.getItem('refreshToken');
+      console.log('✅ Verification - Tokens in localStorage:', {
+        access: savedAccess ? 'exists' : 'missing',
+        refresh: savedRefresh ? 'exists' : 'missing'
+      });
+    } else {
+      console.warn('⚠️ No tokens in login response');
     }
+    
+    return data;
+  } catch (error) {
+    console.error('❌ Login error:', error);
+    throw error;
+  }
 };
 
 /**
  * Logout user
  */
 export const logout = () => {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
+  console.log('🔵 Logging out...');
+  localStorage.removeItem('accessToken');
+  localStorage.removeItem('refreshToken');
+  console.log('✅ Tokens removed from localStorage');
 };
 
 /**
@@ -62,13 +102,22 @@ export const logout = () => {
  * @returns {Promise} User profile data
  */
 export const getUserProfile = async () => {
-    try {
-        const response = await api.get('/auth/profile/');
-        return response.data;
+  try {
+    console.log('🔵 Fetching user profile...');
+    const token = localStorage.getItem('accessToken');
+    console.log('🔑 Access token:', token ? `exists (${token.substring(0, 20)}...)` : 'MISSING');
+    
+    if (!token) {
+      throw new Error('No access token found in localStorage');
     }
-    catch (error){
-        throw error.response?.data || error.message;
-    }
+    
+    const response = await api.get('/auth/profile/');
+    console.log('✅ Profile fetched:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('❌ Profile fetch error:', error.response?.data || error.message);
+    throw error.response?.data || { message: error.message };
+  }
 };
 
 /**
@@ -76,5 +125,6 @@ export const getUserProfile = async () => {
  * @returns {boolean} True if user has access token
  */
 export const isAuthenticated = () => {
-    return !!localStorage.getItem('accessToken');
+  const token = localStorage.getItem('accessToken');
+  return !!token;
 };
