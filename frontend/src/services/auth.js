@@ -5,6 +5,9 @@
 
 import api from './api';
 
+// Get the API base URL from environment variables
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
+
 /**
  * Register a new user
  * @param {Object} userData - User registration data
@@ -42,10 +45,11 @@ export const register = async (userData) => {
 export const login = async (credentials) => {
   try {
     console.log('🔵 Attempting login with email:', credentials.email);
+    console.log('🔵 Using API URL:', API_BASE_URL);
     
     // Make login request WITHOUT using the api instance
     // because it might have stale tokens in the interceptor
-    const response = await fetch('http://127.0.0.1:8000/api/auth/login/', {
+    const response = await fetch(`${API_BASE_URL}/auth/login/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
