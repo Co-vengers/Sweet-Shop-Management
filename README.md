@@ -283,7 +283,7 @@ docker-compose exec backend python manage.py createsuperuser
 
 ### Step 6: Access the Application
 
-- **Frontend**: http://localhost or http://localhost:80
+- **Frontend**: http://localhost:5173
 - **Backend API**: http://localhost:8000
 - **Django Admin**: http://localhost:8000/admin
 - **API Documentation**: http://localhost:8000/api/
