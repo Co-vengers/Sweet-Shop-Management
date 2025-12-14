@@ -91,14 +91,11 @@ WSGI_APPLICATION = 'sweet_shop.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'postgres',
-        'USER': 'postgres',
-        'PASSWORD': os.getenv('DB_PASSWORD'),
-        'HOST': 'db.xoyellqoicyzgxpwpprd.supabase.co',
-        'PORT': '6543',  # Connection pooler port, not direct 5432
-        'OPTIONS': {
-            'sslmode': 'require',
-        },
+        'NAME': os.getenv("DB_NAME"),
+        'USER': os.getenv("DB_USER"),
+        'PASSWORD': os.getenv("DB_PASSWORD"),
+        'HOST': os.getenv("DB_HOST"),
+        'PORT': os.getenv("DB_PORT"),
     }
 }
 
