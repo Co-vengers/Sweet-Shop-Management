@@ -149,9 +149,6 @@ CORS_ALLOWED_ORIGINS = config(
     default='http://localhost:5173,http://localhost:3000'
 ).split(',')
 
-CSRF_TRUSTED_ORIGINS = [
-    "https://sweet-shop-management-plum.vercel.app",
-]
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
