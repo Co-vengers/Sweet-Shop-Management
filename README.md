@@ -476,6 +476,7 @@ The report provides:
 
 ```text
 backend/htmlcov/index.html
+```
 
 ### Run All Tests
 ```bash
