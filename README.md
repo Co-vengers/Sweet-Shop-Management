@@ -457,9 +457,25 @@ For interactive API documentation, visit: http://localhost:8000/api/
 
 ---
 
-## 🧪 Testing
+## 🧪 Testing & Code Coverage
 
-This project follows Test-Driven Development (TDD) with comprehensive test coverage.
+This project strictly follows **Test-Driven Development (TDD)** principles, with extensive automated tests implemented across all backend apps to ensure correctness, reliability, and long-term maintainability.
+
+### ✅ Full Test Coverage Report
+
+A complete, **line-by-line HTML test coverage report** generated using **`pytest-cov`** is committed to the repository for transparent review.
+
+The report provides:
+- Per-file and per-line execution details
+- Coverage statistics for **models, serializers, views, permissions, and URLs**
+- Clear visibility into untested or partially tested code paths
+
+### 📊 View the Coverage Report
+
+➡️ **Open the following file in a browser:**
+
+```text
+backend/htmlcov/index.html
 
 ### Run All Tests
 ```bash
