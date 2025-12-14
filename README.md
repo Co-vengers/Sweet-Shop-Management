@@ -286,8 +286,6 @@ docker-compose exec backend python manage.py createsuperuser
 - **Frontend**: http://localhost:5173
 - **Backend API**: http://localhost:8000
 - **Django Admin**: http://localhost:8000/admin
-- **API Documentation**: http://localhost:8000/api/
-
 ---
 
 ## 💻 Usage
