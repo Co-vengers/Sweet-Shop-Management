@@ -457,7 +457,7 @@ For interactive API documentation, visit: http://localhost:8000/api/
 
 ---
 
-## 🧪 Testing & Code Coverage
+## 🧪 Testing
 
 This project strictly follows **Test-Driven Development (TDD)** principles, with extensive automated tests implemented across all backend apps to ensure correctness, reliability, and long-term maintainability.
 
