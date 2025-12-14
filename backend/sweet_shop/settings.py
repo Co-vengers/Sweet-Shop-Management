@@ -95,9 +95,9 @@ DATABASES = {
         'USER': 'postgres',
         'PASSWORD': os.getenv('DB_PASSWORD'),
         'HOST': 'db.xoyellqoicyzgxpwpprd.supabase.co',
-        'PORT': '5432',
+        'PORT': '6543',  # Connection pooler port, not direct 5432
         'OPTIONS': {
-            'connect_timeout': 10,
+            'sslmode': 'require',
         },
     }
 }
