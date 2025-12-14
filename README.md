@@ -214,7 +214,7 @@ sweet-shop-management/
 
 ### Step 1: Clone the Repository
 ```bash
-git clone https://github.com/yourusername/sweet-shop-management.git
+git clone https://github.com/Co-vengers/sweet-shop-management.git
 cd sweet-shop-management
 ```
 
