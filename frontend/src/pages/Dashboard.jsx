@@ -1,11 +1,20 @@
 /**
- * Dashboard Page
+ * Dashboard Page - Candy Theme
  * Main page showing all sweets with search, CRUD, purchase, and inventory operations
  */
 
 import { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import { 
+  FaCandyCane, 
+  FaUser, 
+  FaSignOutAlt, 
+  FaPlus, 
+  FaSearch,
+  FaSpinner,
+  FaExclamationTriangle
+} from 'react-icons/fa';
 
 import {
   getAllSweets,
@@ -170,51 +179,103 @@ const Dashboard = () => {
 
   // -------------------- Render --------------------
   return (
-    <div className="dashboard-container">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50">
       {/* Navbar */}
-      <nav className="navbar">
-        <h1>🍬 Sweet Shop</h1>
-        <div className="nav-right">
-          <span>
-            Hello, <strong>{user?.username}</strong>
-            {user?.is_admin && <span className="admin-badge">Admin</span>}
-          </span>
-          <button className="btn-logout" onClick={handleLogout}>
-            Logout
-          </button>
+      <nav className="bg-white/90 backdrop-blur-md shadow-md border-b border-purple-100 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo */}
+            <div className="flex items-center space-x-3">
+              <div className="flex items-center gap-2">
+                <FaCandyCane className="text-2xl text-purple-600 animate-bounce" />
+                <span className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent">
+                  SweetShop
+                </span>
+              </div>
+            </div>
+
+            {/* User Info & Actions */}
+            <div className="flex items-center space-x-4">
+              <div className="hidden sm:flex items-center space-x-3">
+                <div className="text-right">
+                  <p className="text-sm text-gray-600">
+                    Hello, <span className="font-semibold text-gray-800">{user?.username}</span>
+                  </p>
+                  {user?.is_admin && (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-purple-600 to-pink-500 text-white shadow-sm">
+                      Admin
+                    </span>
+                  )}
+                </div>
+                <div className="w-10 h-10 bg-gradient-to-r from-purple-600 to-pink-500 rounded-full flex items-center justify-center text-white font-semibold shadow-lg">
+                  <FaUser className="text-sm" />
+                </div>
+              </div>
+
+              <button
+                onClick={handleLogout}
+                className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-500 text-white rounded-lg hover:from-purple-700 hover:to-pink-600 transition-all duration-200 transform hover:scale-105 shadow-md"
+              >
+                <FaSignOutAlt className="text-sm" />
+                <span className="hidden sm:inline">Logout</span>
+              </button>
+            </div>
+          </div>
         </div>
       </nav>
 
       {/* Content */}
-      <div className="dashboard-content">
-        <div className="content-header">
-          <div>
-            <h2>Sweet Collection</h2>
-            <p className="subtitle">
-              {isSearching ? 'Search Results' : 'Browse all available sweets'}
-            </p>
-          </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl p-6 mb-8 border border-purple-100">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+            <div>
+              <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent mb-2">
+                Sweet Collection
+              </h2>
+              <p className="text-gray-600">
+                {isSearching ? '🔍 Search Results' : '🍬 Browse all available sweets'}
+              </p>
+            </div>
 
-          {user?.is_admin && (
-            <button className="btn-add-sweet" onClick={handleAddSweet}>
-              ➕ Add New Sweet
-            </button>
-          )}
+            {user?.is_admin && (
+              <button
+                onClick={handleAddSweet}
+                className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-500 text-white font-semibold rounded-lg hover:from-purple-700 hover:to-pink-600 transition-all duration-200 transform hover:scale-105 shadow-lg"
+              >
+                <FaPlus className="text-sm" />
+                <span>Add New Sweet</span>
+              </button>
+            )}
+          </div>
         </div>
 
-        <SearchBar onSearch={handleSearch} onClear={handleClearSearch} />
+        {/* Search Bar */}
+        <div className="mb-8">
+          <SearchBar onSearch={handleSearch} onClear={handleClearSearch} />
+        </div>
 
-        {error && <div className="error-banner">⚠️ {error}</div>}
-
-        {loading && (
-          <div className="loading-container">
-            <div className="spinner" />
-            <p>Loading sweets...</p>
+        {/* Error Banner */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center space-x-3 animate-shake">
+            <FaExclamationTriangle className="text-red-500 flex-shrink-0" />
+            <p className="text-red-600 font-medium">{error}</p>
           </div>
         )}
 
+        {/* Loading State */}
+        {loading && (
+          <div className="flex flex-col items-center justify-center py-20">
+            <div className="relative">
+              <FaSpinner className="text-6xl text-purple-600 animate-spin" />
+            </div>
+            <p className="mt-4 text-gray-600 font-medium">Loading delicious sweets...</p>
+          </div>
+        )}
+
+        {/* Sweets Grid */}
         {!loading && sweets.length > 0 && (
-          <div className="sweets-grid">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {sweets.map((sweet) => (
               <SweetCard
                 key={sweet.id}
@@ -229,19 +290,27 @@ const Dashboard = () => {
           </div>
         )}
 
+        {/* Empty State */}
         {!loading && sweets.length === 0 && (
-          <div className="empty-state">
-            <div className="empty-icon">🍭</div>
-            <h3>{isSearching ? 'No sweets found' : 'No sweets available'}</h3>
-            <p>
+          <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-xl p-12 text-center border border-purple-100">
+            <div className="w-24 h-24 bg-gradient-to-r from-purple-100 to-pink-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <span className="text-6xl">🍭</span>
+            </div>
+            <h3 className="text-2xl font-bold text-gray-800 mb-2">
+              {isSearching ? 'No sweets found' : 'No sweets available'}
+            </h3>
+            <p className="text-gray-600 mb-6 max-w-md mx-auto">
               {isSearching
-                ? 'Try adjusting your search filters'
+                ? 'Try adjusting your search filters to find what you\'re looking for'
                 : user?.is_admin
-                ? 'Click "Add New Sweet" to get started!'
-                : 'Check back later for new sweets!'}
+                ? 'Click "Add New Sweet" to start building your collection!'
+                : 'Check back soon for new sweet treats!'}
             </p>
             {isSearching && (
-              <button className="btn-clear-search" onClick={handleClearSearch}>
+              <button
+                onClick={handleClearSearch}
+                className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-500 text-white rounded-lg hover:from-purple-700 hover:to-pink-600 transition-all duration-200 transform hover:scale-105 shadow-md font-semibold"
+              >
                 Show All Sweets
               </button>
             )}

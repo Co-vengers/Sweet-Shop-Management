@@ -1,8 +1,4 @@
-/**
- * Main App Component
- * Sets up routing and auth context
- */
-
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 

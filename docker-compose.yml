@@ -1,7 +1,29 @@
-version: '3.8'
-
 services:
-  # Backend Service
+  # PostgreSQL Database Service
+  db:
+    image: postgres:15-alpine
+    container_name: sweetshop-db
+    environment:
+      # Use environment variables from your shell or a .env file (recommended)
+      POSTGRES_DB: ${DB_NAME:-sweet_shop_db}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - sweetshop-network
+    healthcheck:
+      # Simple check to see if PostgreSQL is ready to accept connections
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-sweet_shop_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Django Backend Service
   backend:
     build:
       context: ./backend
@@ -9,35 +31,58 @@ services:
     container_name: sweetshop-backend
     ports:
       - "8000:8000"
+    # Assuming backend/.env contains DB_NAME, DB_USER, etc.
     env_file:
       - ./backend/.env
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
     volumes:
+      # Mount the code for development/hot-reloading
       - ./backend:/app
+      # Named volume for collecting static files
       - static_volume:/app/staticfiles
+    
+    # FIX: Corrected startup command to use 'apt-get' instead of 'apk' 
+    # to install 'netcat-traditional' (for the database wait loop) 
+    # since the backend image is based on Debian (python:3.11-slim).
     command: >
-      sh -c "python manage.py migrate &&
-             python manage.py collectstatic --noinput &&
-             gunicorn --bind 0.0.0.0:8000 --workers 3 --reload sweet_shop.wsgi:application"
+      sh -c "
+        echo 'Waiting for database...' &&
+        apt-get update && apt-get install -y netcat-traditional && rm -rf /var/lib/apt/lists/* && 
+        while ! nc -z db 5432; do sleep 1; done &&
+        echo 'Database is ready!' &&
+        python manage.py migrate &&
+        python manage.py collectstatic --noinput &&
+        gunicorn --bind 0.0.0.0:8000 --workers 3 sweet_shop.wsgi:application
+      "
+    
+    depends_on:
+      db:
+        condition: service_healthy
     restart: unless-stopped
     networks:
       - sweetshop-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/admin/"]
+      # Check if Django is serving correctly (using a simple endpoint like /admin)
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/admin/ || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
+      start_period: 40s # Give the app enough time to start up
 
-  # Frontend Service
+  # React Frontend Service
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: sweetshop-frontend
     ports:
+      # Expose on port 80 (standard HTTP port)
       - "80:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     restart: unless-stopped
     networks:
       - sweetshop-network
@@ -49,6 +94,10 @@ services:
       start_period: 10s
 
 volumes:
+  # Data volume for PostgreSQL persistence
+  postgres_data:
+    driver: local
+  # Volume to share static files between Django and Nginx (if applicable)
   static_volume:
 
 networks:

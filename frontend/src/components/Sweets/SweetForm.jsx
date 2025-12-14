@@ -1,219 +1,254 @@
-/**
- * SweetForm Component
- * Modern Tailwind-based form for adding or editing sweets
- */
-
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { FaTimes, FaCandyCane, FaDollarSign, FaBox, FaAlignLeft } from 'react-icons/fa';
 
 const SweetForm = ({ sweet, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({
-    name: '',
-    category: 'Chocolate',
-    description: '',
-    price: '',
-    quantity: ''
+    name: sweet?.name || '',
+    category: sweet?.category || '',
+    price: sweet?.price || '',
+    quantity: sweet?.quantity || '',
+    description: sweet?.description || '',
   });
 
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
 
-  const categories = [
-    'Chocolate',
-    'Gummy',
-    'Hard Candy',
-    'Lollipop',
-    'Sour',
-    'Other'
-  ];
-
-  /**
-   * Load sweet data if editing
-   */
-  useEffect(() => {
-    if (sweet) {
-      setFormData({
-        name: sweet.name,
-        category: sweet.category,
-        description: sweet.description || '',
-        price: sweet.price,
-        quantity: sweet.quantity
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+    // Clear error for this field
+    if (errors[e.target.name]) {
+      setErrors({
+        ...errors,
+        [e.target.name]: '',
       });
     }
-  }, [sweet]);
-
-  /**
-   * Handle input change
-   */
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-    setErrors({ ...errors, [name]: '' });
   };
 
-  /**
-   * Validate form
-   */
-  const validateForm = () => {
+  const validate = () => {
     const newErrors = {};
 
-    if (!formData.name.trim()) newErrors.name = 'Name is required';
-    if (!formData.price || parseFloat(formData.price) <= 0)
+    if (!formData.name.trim()) {
+      newErrors.name = 'Name is required';
+    }
+
+    if (!formData.category) {
+      newErrors.category = 'Category is required';
+    }
+
+    if (!formData.price || parseFloat(formData.price) <= 0) {
       newErrors.price = 'Price must be greater than 0';
-    if (formData.quantity === '' || parseInt(formData.quantity) < 0)
+    }
+
+    if (!formData.quantity || parseInt(formData.quantity) < 0) {
       newErrors.quantity = 'Quantity must be 0 or greater';
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  /**
-   * Handle submit
-   */
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validateForm()) return;
+
+    if (!validate()) {
+      return;
+    }
 
     setLoading(true);
+
     try {
-      await onSubmit(formData);
+      await onSubmit({
+        ...formData,
+        price: parseFloat(formData.price),
+        quantity: parseInt(formData.quantity),
+      });
     } catch (err) {
-      setErrors({ general: err.message || 'Something went wrong' });
+      setErrors({ general: err.message || 'Failed to save sweet' });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="bg-white w-full max-w-xl rounded-xl shadow-2xl overflow-hidden">
-
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in overflow-y-auto">
+      <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-2xl max-w-2xl w-full my-8 border border-purple-100 animate-in">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-indigo-600 to-purple-700 text-white">
-          <h2 className="text-xl font-bold">
-            {sweet ? '✏️ Edit Sweet' : '➕ Add New Sweet'}
-          </h2>
+        <div className="bg-gradient-to-r from-purple-600 to-pink-500 p-6 rounded-t-2xl relative">
           <button
             onClick={onCancel}
-            className="text-white hover:text-gray-200 text-xl"
+            className="absolute top-4 right-4 text-white/80 hover:text-white transition-colors"
           >
-            ✖
+            <FaTimes className="text-xl" />
           </button>
+
+          <div className="flex items-center gap-3 mb-2">
+            <FaCandyCane className="text-3xl text-white" />
+            <h2 className="text-2xl font-bold text-white">
+              {sweet ? 'Edit Sweet' : 'Add New Sweet'}
+            </h2>
+          </div>
+          <p className="text-white/80 text-sm">
+            {sweet ? 'Update sweet details' : 'Add a delicious new sweet to your collection'}
+          </p>
         </div>
 
-        {/* Body */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
-
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="p-6">
+          {/* General Error */}
           {errors.general && (
-            <div className="bg-red-100 text-red-700 p-3 rounded-lg text-sm">
-              {errors.general}
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-600 text-sm text-center font-medium">{errors.general}</p>
             </div>
           )}
 
-          {/* Name */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Sweet Name *
-            </label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              className="mt-1 w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
-              placeholder="Milk Chocolate Bar"
-            />
-            {errors.name && (
-              <p className="text-sm text-red-600 mt-1">{errors.name}</p>
-            )}
-          </div>
-
-          {/* Category */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Category *
-            </label>
-            <select
-              name="category"
-              value={formData.category}
-              onChange={handleChange}
-              className="mt-1 w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
-            >
-              {categories.map(cat => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Description */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Description
-            </label>
-            <textarea
-              name="description"
-              rows="3"
-              value={formData.description}
-              onChange={handleChange}
-              className="mt-1 w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
-              placeholder="Describe the sweet..."
-            />
-          </div>
-
-          {/* Price & Quantity */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-4">
+            {/* Name Field */}
             <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Price ($) *
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Sweet Name <span className="text-red-500">*</span>
               </label>
-              <input
-                type="number"
-                name="price"
-                step="0.01"
-                min="0"
-                value={formData.price}
-                onChange={handleChange}
-                className="mt-1 w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
-              />
-              {errors.price && (
-                <p className="text-sm text-red-600 mt-1">{errors.price}</p>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <FaCandyCane className="text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  placeholder="e.g., Chocolate Truffle"
+                  className={`w-full pl-10 pr-3 py-3 border ${
+                    errors.name ? 'border-red-500' : 'border-gray-300'
+                  } rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200`}
+                />
+              </div>
+              {errors.name && (
+                <p className="mt-1 text-xs text-red-500">{errors.name}</p>
               )}
             </div>
 
+            {/* Category Field */}
             <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Quantity *
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Category <span className="text-red-500">*</span>
               </label>
-              <input
-                type="number"
-                name="quantity"
-                min="0"
-                value={formData.quantity}
+              <select
+                name="category"
+                value={formData.category}
                 onChange={handleChange}
-                className="mt-1 w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
-              />
-              {errors.quantity && (
-                <p className="text-sm text-red-600 mt-1">{errors.quantity}</p>
+                className={`w-full px-3 py-3 border ${
+                  errors.category ? 'border-red-500' : 'border-gray-300'
+                } rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 bg-white`}
+              >
+                <option value="">Select a category</option>
+                <option value="Chocolate">Chocolate</option>
+                <option value="Candy">Candy</option>
+                <option value="Gummy">Gummy</option>
+                <option value="Lollipop">Lollipop</option>
+                <option value="Hard Candy">Hard Candy</option>
+                <option value="Sour">Sour</option>
+                <option value="Other">Other</option>
+              </select>
+              {errors.category && (
+                <p className="mt-1 text-xs text-red-500">{errors.category}</p>
               )}
+            </div>
+
+            {/* Price and Quantity Row */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Price Field */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Price <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <FaDollarSign className="text-gray-400" />
+                  </div>
+                  <input
+                    type="number"
+                    name="price"
+                    value={formData.price}
+                    onChange={handleChange}
+                    placeholder="0.00"
+                    step="0.01"
+                    min="0"
+                    className={`w-full pl-10 pr-3 py-3 border ${
+                      errors.price ? 'border-red-500' : 'border-gray-300'
+                    } rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200`}
+                  />
+                </div>
+                {errors.price && (
+                  <p className="mt-1 text-xs text-red-500">{errors.price}</p>
+                )}
+              </div>
+
+              {/* Quantity Field */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Quantity <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <FaBox className="text-gray-400" />
+                  </div>
+                  <input
+                    type="number"
+                    name="quantity"
+                    value={formData.quantity}
+                    onChange={handleChange}
+                    placeholder="0"
+                    min="0"
+                    className={`w-full pl-10 pr-3 py-3 border ${
+                      errors.quantity ? 'border-red-500' : 'border-gray-300'
+                    } rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200`}
+                  />
+                </div>
+                {errors.quantity && (
+                  <p className="mt-1 text-xs text-red-500">{errors.quantity}</p>
+                )}
+              </div>
+            </div>
+
+            {/* Description Field */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Description (Optional)
+              </label>
+              <div className="relative">
+                <div className="absolute top-3 left-3 pointer-events-none">
+                  <FaAlignLeft className="text-gray-400" />
+                </div>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  placeholder="Add a sweet description..."
+                  rows="3"
+                  className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 resize-none"
+                />
+              </div>
             </div>
           </div>
 
-          {/* Actions */}
-          <div className="flex justify-end gap-3 pt-4">
+          {/* Action Buttons */}
+          <div className="flex gap-3 mt-6">
             <button
               type="button"
               onClick={onCancel}
-              disabled={loading}
-              className="px-5 py-2 rounded-lg border text-gray-700 hover:bg-gray-100"
+              className="flex-1 px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-lg transition-all duration-200 transform hover:scale-105 border border-gray-300"
             >
               Cancel
             </button>
-
             <button
               type="submit"
               disabled={loading}
-              className="px-6 py-2 rounded-lg text-white font-semibold bg-gradient-to-r from-indigo-600 to-purple-700 hover:from-indigo-700 hover:to-purple-800 disabled:opacity-50"
+              className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-500 text-white font-semibold rounded-lg hover:from-purple-700 hover:to-pink-600 transition-all duration-200 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Saving...' : sweet ? 'Update Sweet' : 'Create Sweet'}
+              {loading ? 'Saving...' : sweet ? 'Update Sweet' : 'Add Sweet'}
             </button>
           </div>
         </form>

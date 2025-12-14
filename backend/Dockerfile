@@ -14,6 +14,7 @@ RUN apt-get update && apt-get install -y \
     gcc \
     python3-dev \
     musl-dev \
+    netcat-traditional \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
