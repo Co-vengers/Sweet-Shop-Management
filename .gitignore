@@ -61,7 +61,6 @@ django_cache/
 # ================================
 # Test / Coverage
 # ================================
-htmlcov/
 .coverage
 .coverage.*
 .pytest_cache/
