@@ -971,7 +971,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 👥 Authors
 
-- **Vyom Rohila** - *Initial work* - [GitHub]([https://github.com/yourusername](https://github.com/Co-vengers))
+- **Vyom Rohila** - *Initial work* - [GitHub]([https://github.com/Co-vengers])
 - **Claude (Anthropic)** - *AI Assistant* - Assisted with code generation, testing, and documentation
 
 ---
